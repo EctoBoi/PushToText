@@ -73,11 +73,7 @@ Stored values include:
 
 ## Run the app
 
-From the project folder:
-
-```powershell
-dotnet run
-```
+Run PushToText.exe
 
 ## Dependencies
 
