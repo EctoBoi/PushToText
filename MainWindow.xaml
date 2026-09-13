@@ -67,6 +67,12 @@
                             Click="RefreshAudioDevicesButton_OnClick" />
                 </StackPanel>
 
+                <CheckBox x:Name="AutoCopyCheckBox"
+                          Margin="0,0,0,8"
+                          Content="Auto copy after transcription"
+                          Checked="AutoCopyCheckBox_OnCheckedChanged"
+                          Unchecked="AutoCopyCheckBox_OnCheckedChanged" />
+
                 <GroupBox Header="Hotkey Customization">
                     <Grid Margin="8">
                         <Grid.ColumnDefinitions>

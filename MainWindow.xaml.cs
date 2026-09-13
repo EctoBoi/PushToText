@@ -86,6 +86,7 @@ public partial class MainWindow : Window
         {
             UpdateModeSelection();
             PopulateAudioInputSelection(_settings.InputDeviceNumber);
+            AutoCopyCheckBox.IsChecked = _settings.AutoCopyAfterTranscription;
             MicKeyComboBox.ItemsSource = SelectableKeys;
             CopyKeyComboBox.ItemsSource = SelectableKeys;
             ApplyBindingToControls(_settings.MicrophoneHotkey, MicCtrlCheckBox, MicShiftCheckBox, MicAltCheckBox, MicWinCheckBox, MicKeyComboBox);
@@ -175,6 +176,18 @@ public partial class MainWindow : Window
         SetStatus($"Audio input: {device.Name}", Brushes.SteelBlue);
     }
 
+    private void AutoCopyCheckBox_OnCheckedChanged(object sender, RoutedEventArgs e)
+    {
+        if (_isInitializingUi)
+        {
+            return;
+        }
+
+        _settings.AutoCopyAfterTranscription = AutoCopyCheckBox.IsChecked == true;
+        _settingsService.Save(_settings);
+        SetStatus(_settings.AutoCopyAfterTranscription ? "Auto-copy enabled" : "Auto-copy disabled", Brushes.SteelBlue);
+    }
+
     private void ApplyHotkeysButton_OnClick(object sender, RoutedEventArgs e)
     {
         var micHotkey = BuildBindingFromControls(MicCtrlCheckBox, MicShiftCheckBox, MicAltCheckBox, MicWinCheckBox, MicKeyComboBox);
@@ -249,7 +262,21 @@ public partial class MainWindow : Window
             var audioData = await _audioRecorder.StopRecordingAsync();
             var transcription = await _transcriptionService.TranscribeAsync(audioData);
             TranscriptTextBox.Text = transcription;
-            SetStatus(string.IsNullOrWhiteSpace(transcription) ? "No speech detected" : "Transcription ready", Brushes.ForestGreen);
+
+            if (string.IsNullOrWhiteSpace(transcription))
+            {
+                SetStatus("No speech detected", Brushes.ForestGreen);
+                return;
+            }
+
+            if (_settings.AutoCopyAfterTranscription && TryCopyTextToClipboard(transcription))
+            {
+                SetStatus("Transcription ready and copied", Brushes.ForestGreen);
+            }
+            else
+            {
+                SetStatus("Transcription ready", Brushes.ForestGreen);
+            }
         }
         catch (Exception ex)
         {
@@ -271,15 +298,24 @@ public partial class MainWindow : Window
             return;
         }
 
+        if (TryCopyTextToClipboard(text))
+        {
+            SetStatus("Copied to clipboard", Brushes.SteelBlue);
+        }
+    }
+
+    private bool TryCopyTextToClipboard(string text)
+    {
         try
         {
             Clipboard.SetText(text);
-            SetStatus("Copied to clipboard", Brushes.SteelBlue);
+            return true;
         }
         catch (Exception ex)
         {
             SetStatus("Copy failed", Brushes.OrangeRed);
             ErrorTextBlock.Text = ex.Message;
+            return false;
         }
     }
 

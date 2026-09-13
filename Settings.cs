@@ -70,6 +70,7 @@ public sealed class AppSettings
 {
     public RecordingMode RecordingMode { get; set; } = RecordingMode.Push;
     public int InputDeviceNumber { get; set; } = -1;
+    public bool AutoCopyAfterTranscription { get; set; } = false;
 
     public HotkeyBinding MicrophoneHotkey { get; set; } = new()
     {
