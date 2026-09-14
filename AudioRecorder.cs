@@ -1,4 +1,5 @@
 using System.IO;
+using NAudio.CoreAudioApi;
 using NAudio.Wave;
 
 namespace PushToText;
@@ -17,10 +18,17 @@ public sealed class AudioRecorder : IDisposable
     public static IReadOnlyList<AudioInputDevice> GetInputDevices()
     {
         var devices = new List<AudioInputDevice>();
+        var endpointNames = GetCaptureEndpointNames();
+
         for (var i = 0; i < WaveInEvent.DeviceCount; i++)
         {
             var capabilities = WaveInEvent.GetCapabilities(i);
-            devices.Add(new AudioInputDevice(i, capabilities.ProductName));
+            var fallbackName = capabilities.ProductName;
+            var displayName = i < endpointNames.Count && !string.IsNullOrWhiteSpace(endpointNames[i])
+                ? endpointNames[i]
+                : fallbackName;
+
+            devices.Add(new AudioInputDevice(i, displayName));
         }
 
         return devices;
@@ -136,6 +144,22 @@ public sealed class AudioRecorder : IDisposable
             }
 
             _stopTcs = null;
+        }
+    }
+
+    private static List<string> GetCaptureEndpointNames()
+    {
+        try
+        {
+            using var enumerator = new MMDeviceEnumerator();
+            return enumerator
+                .EnumerateAudioEndPoints(DataFlow.Capture, DeviceState.Active)
+                .Select(device => device.FriendlyName)
+                .ToList();
+        }
+        catch
+        {
+            return [];
         }
     }
 }

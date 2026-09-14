@@ -3,5 +3,231 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
+        <ResourceDictionary>
+            <!-- Discord-like dark theme brushes -->
+            <SolidColorBrush x:Key="WindowBackgroundBrush" Color="#FF36393F" />
+            <SolidColorBrush x:Key="SurfaceBackgroundBrush" Color="#FF2F3136" />
+            <SolidColorBrush x:Key="ElevatedBackgroundBrush" Color="#FF202225" />
+            <SolidColorBrush x:Key="BorderBrush" Color="#FF232428" />
+            <SolidColorBrush x:Key="ForegroundPrimaryBrush" Color="#FFDCDDDE" />
+            <SolidColorBrush x:Key="SecondaryBrush" Color="#FFB9BBBE" />
+            <SolidColorBrush x:Key="MutedBrush" Color="#FF72767D" />
+            <SolidColorBrush x:Key="AccentBrush" Color="#FF5865F2" />
+            <SolidColorBrush x:Key="ErrorBrush" Color="#FFED4245" />
+
+            <!-- Global font and basic control styles -->
+            <Style TargetType="Window">
+                <Setter Property="Background" Value="{StaticResource WindowBackgroundBrush}" />
+                <Setter Property="Foreground" Value="{StaticResource ForegroundPrimaryBrush}" />
+                <Setter Property="FontFamily" Value="Segoe UI" />
+            </Style>
+
+            <Style TargetType="TextBlock">
+                <Setter Property="Foreground" Value="{StaticResource ForegroundPrimaryBrush}" />
+            </Style>
+
+            <Style TargetType="TextBox">
+                <Setter Property="Background" Value="{StaticResource SurfaceBackgroundBrush}" />
+                <Setter Property="Foreground" Value="{StaticResource ForegroundPrimaryBrush}" />
+                <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="Padding" Value="6" />
+                <Setter Property="CaretBrush" Value="{StaticResource ForegroundPrimaryBrush}" />
+            </Style>
+
+            <Style TargetType="ComboBox">
+                <Setter Property="Background" Value="{StaticResource SurfaceBackgroundBrush}" />
+                <Setter Property="Foreground" Value="{StaticResource ForegroundPrimaryBrush}" />
+                <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
+                <Setter Property="Padding" Value="4,2" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ComboBox">
+                            <Grid>
+                                <ToggleButton Name="ToggleButton"
+                                              IsChecked="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                                              Background="{TemplateBinding Background}"
+                                              BorderBrush="{TemplateBinding BorderBrush}"
+                                              BorderThickness="{TemplateBinding BorderThickness}"
+                                              Padding="{TemplateBinding Padding}"
+                                              Focusable="False"
+                                              OverridesDefaultStyle="True">
+                                    <ToggleButton.Template>
+                                        <ControlTemplate TargetType="ToggleButton">
+                                            <Border x:Name="Bd"
+                                                    Background="{TemplateBinding Background}"
+                                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                                    Padding="{TemplateBinding Padding}">
+                                                <Grid>
+                                                    <!-- Bind to the ComboBox's SelectionBoxItem so the selected text is visible -->
+                                                    <ContentPresenter
+                                                        Content="{Binding SelectionBoxItem, RelativeSource={RelativeSource AncestorType=ComboBox}}"
+                                                        ContentTemplate="{Binding SelectionBoxItemTemplate, RelativeSource={RelativeSource AncestorType=ComboBox}}"
+                                                        VerticalAlignment="Center"
+                                                        Margin="2,0,18,0"
+                                                        RecognizesAccessKey="True"
+                                                        TextElement.Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ComboBox}}" />
+                                                    <TextBlock Text="▾"
+                                                               HorizontalAlignment="Right"
+                                                               VerticalAlignment="Center"
+                                                               Margin="0,0,6,0"
+                                                               Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ComboBox}}" />
+                                                </Grid>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="Bd" Property="Background" Value="{StaticResource ElevatedBackgroundBrush}" />
+                                                    <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource BorderBrush}" />
+                                                    <Setter Property="Foreground" Value="{StaticResource ForegroundPrimaryBrush}" />
+                                                </Trigger>
+                                                <Trigger Property="IsPressed" Value="True">
+                                                    <Setter TargetName="Bd" Property="Background" Value="{StaticResource ElevatedBackgroundBrush}" />
+                                                    <Setter Property="Foreground" Value="{StaticResource ForegroundPrimaryBrush}" />
+                                                </Trigger>
+                                                <Trigger Property="IsChecked" Value="True">
+                                                    <Setter TargetName="Bd" Property="Background" Value="{StaticResource ElevatedBackgroundBrush}" />
+                                                    <Setter Property="Foreground" Value="{StaticResource ForegroundPrimaryBrush}" />
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </ToggleButton.Template>
+                                </ToggleButton>
+
+                                <Popup Name="Popup"
+                                       Placement="Bottom"
+                                       IsOpen="{TemplateBinding IsDropDownOpen}"
+                                       AllowsTransparency="True"
+                                       Focusable="False"
+                                       PopupAnimation="Slide">
+                                    <Border Background="{StaticResource SurfaceBackgroundBrush}"
+                                            BorderBrush="{TemplateBinding BorderBrush}"
+                                            BorderThickness="1"
+                                            SnapsToDevicePixels="True">
+                                        <ScrollViewer Margin="0"
+                                                      SnapsToDevicePixels="True">
+                                            <StackPanel IsItemsHost="True"
+                                                        KeyboardNavigation.DirectionalNavigation="Contained" />
+                                        </ScrollViewer>
+                                    </Border>
+                                </Popup>
+                            </Grid>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="HasItems" Value="false">
+                                    <Setter TargetName="Popup" Property="MinHeight" Value="95" />
+                                </Trigger>
+                                <!-- Make the closed ComboBox darker on hover by targeting the ToggleButton -->
+                                <Trigger SourceName="ToggleButton" Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="ToggleButton" Property="Background" Value="{StaticResource ElevatedBackgroundBrush}" />
+                                    <Setter TargetName="ToggleButton" Property="BorderBrush" Value="{StaticResource BorderBrush}" />
+                                    <Setter Property="Foreground" Value="{StaticResource ForegroundPrimaryBrush}" />
+                                </Trigger>
+                                <Trigger SourceName="ToggleButton" Property="IsPressed" Value="True">
+                                    <Setter TargetName="ToggleButton" Property="Background" Value="{StaticResource ElevatedBackgroundBrush}" />
+                                    <Setter Property="Foreground" Value="{StaticResource ForegroundPrimaryBrush}" />
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- Ensure dropdown items use dark/visible text on the dark background -->
+            <Style TargetType="ComboBoxItem">
+                <Setter Property="Background" Value="{StaticResource SurfaceBackgroundBrush}" />
+                <Setter Property="Foreground" Value="{StaticResource ForegroundPrimaryBrush}" />
+                <Setter Property="Padding" Value="6,2" />
+                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                <Setter Property="VerticalContentAlignment" Value="Center" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ComboBoxItem">
+                            <Border x:Name="Bd"
+                                    Background="{TemplateBinding Background}"
+                                    Padding="{TemplateBinding Padding}">
+                                <ContentPresenter
+                                    HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                    VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                    SnapsToDevicePixels="True" />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Bd" Property="Background" Value="{StaticResource ElevatedBackgroundBrush}" />
+                                </Trigger>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <!-- Ensure selected item uses dark background and proper foreground -->
+                                    <Setter TargetName="Bd" Property="Background" Value="{StaticResource ElevatedBackgroundBrush}" />
+                                    <Setter Property="Foreground" Value="{StaticResource ForegroundPrimaryBrush}" />
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <Style TargetType="Button">
+                <!-- Make default button background match ComboBox surface and hover use elevated brush like ComboBox -->
+                <Setter Property="Background" Value="{StaticResource SurfaceBackgroundBrush}" />
+                <Setter Property="Foreground" Value="{StaticResource ForegroundPrimaryBrush}" />
+                <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="Padding" Value="6,2" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="Bd"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    Padding="{TemplateBinding Padding}"
+                                    SnapsToDevicePixels="True">
+                                <ContentPresenter HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center"
+                                                  RecognizesAccessKey="True"
+                                                  Content="{TemplateBinding Content}"
+                                                  ContentTemplate="{TemplateBinding ContentTemplate}"
+                                                  Margin="0" />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <!-- Hover uses ElevatedBackgroundBrush (dark) to match ComboBox hover -->
+                                    <Setter TargetName="Bd" Property="Background" Value="{StaticResource ElevatedBackgroundBrush}" />
+                                    <Setter Property="Foreground" Value="{StaticResource ForegroundPrimaryBrush}" />
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <!-- Pressed state also uses elevated brush -->
+                                    <Setter TargetName="Bd" Property="Background" Value="{StaticResource ElevatedBackgroundBrush}" />
+                                    <Setter Property="Foreground" Value="{StaticResource ForegroundPrimaryBrush}" />
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter TargetName="Bd" Property="Background" Value="{StaticResource SurfaceBackgroundBrush}" />
+                                    <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <Style TargetType="CheckBox">
+                <Setter Property="Foreground" Value="{StaticResource ForegroundPrimaryBrush}" />
+            </Style>
+
+            <Style TargetType="Expander">
+                <Setter Property="Foreground" Value="{StaticResource ForegroundPrimaryBrush}" />
+                <Setter Property="Background" Value="{StaticResource WindowBackgroundBrush}" />
+            </Style>
+
+            <Style TargetType="GroupBox">
+                <Setter Property="Foreground" Value="{StaticResource ForegroundPrimaryBrush}" />
+                <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
+            </Style>
+        </ResourceDictionary>
     </Application.Resources>
 </Application>

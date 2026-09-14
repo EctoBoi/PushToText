@@ -56,6 +56,7 @@ Stored values include:
 - Selected microphone device number
 - Mic hotkey
 - Copy hotkey
+- Auto copy after transcription
 
 ## UI overview
 
