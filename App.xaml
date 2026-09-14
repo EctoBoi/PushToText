@@ -15,6 +15,11 @@
             <SolidColorBrush x:Key="AccentBrush" Color="#FF5865F2" />
             <SolidColorBrush x:Key="ErrorBrush" Color="#FFED4245" />
 
+            <Style TargetType="ToolTip">
+                <Setter Property="Foreground" Value="Black" />
+                <Setter Property="Background" Value="White" />
+            </Style>
+
             <!-- Global font and basic control styles -->
             <Style TargetType="Window">
                 <Setter Property="Background" Value="{StaticResource WindowBackgroundBrush}" />

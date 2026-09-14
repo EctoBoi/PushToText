@@ -19,8 +19,13 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <DockPanel Grid.Row="0" LastChildFill="True" Margin="0,0,0,8">
-            <StackPanel Orientation="Horizontal" DockPanel.Dock="Left" VerticalAlignment="Center">
+        <Grid Grid.Row="0" Margin="0,0,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                 <Ellipse x:Name="RecordingLight"
                          Width="12"
                          Height="12"
@@ -37,12 +42,107 @@
                            FontWeight="SemiBold"
                            Text="Ready" />
             </StackPanel>
-        </DockPanel>
 
-        <Expander Grid.Row="1"
-                  Header="Options"
-                  IsExpanded="False"
-                  Margin="0,0,0,8">
+            <StackPanel Grid.Column="1"
+                        Orientation="Horizontal"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center">
+                <Button x:Name="MinimizeToTrayButton"
+                        Width="26"
+                        Height="26"
+                        Margin="0,0,6,0"
+                        BorderThickness="0"
+                        Background="Transparent"
+                        Foreground="{StaticResource ForegroundPrimaryBrush}"
+                        Click="MinimizeToTrayButton_OnClick">
+                    <Button.ToolTip>
+                        <ToolTip Background="White" Foreground="Black">
+                            <TextBlock Foreground="Black" Text="Minimize to tray" />
+                        </ToolTip>
+                    </Button.ToolTip>
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Grid>
+                                <Ellipse x:Name="Circle"
+                                         Fill="{StaticResource SurfaceBackgroundBrush}"
+                                         Stroke="{StaticResource BorderBrush}"
+                                         StrokeThickness="1" />
+                                <TextBlock HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           FontSize="12"
+                                           Text="_"
+                                           Margin="0,0,0,4"
+                                           Foreground="{TemplateBinding Foreground}" />
+                            </Grid>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Circle" Property="Fill" Value="{StaticResource ElevatedBackgroundBrush}" />
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="Circle" Property="Fill" Value="{StaticResource ElevatedBackgroundBrush}" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+
+                <ToggleButton x:Name="OptionsToggleButton"
+                              Width="26"
+                              Height="26"
+                              HorizontalAlignment="Right"
+                              VerticalAlignment="Center"
+                              BorderThickness="0"
+                              Background="Transparent"
+                              Foreground="{StaticResource ForegroundPrimaryBrush}">
+                    <ToggleButton.ToolTip>
+                        <ToolTip Background="White" Foreground="Black">
+                            <TextBlock Foreground="Black" Text="Options" />
+                        </ToolTip>
+                    </ToggleButton.ToolTip>
+                    <ToggleButton.Template>
+                        <ControlTemplate TargetType="ToggleButton">
+                            <Grid>
+                                <Ellipse x:Name="Circle"
+                                         Fill="{StaticResource SurfaceBackgroundBrush}"
+                                         Stroke="{StaticResource BorderBrush}"
+                                         StrokeThickness="1" />
+                                <TextBlock HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           FontSize="14"
+                                           Text="⋯"
+                                           Foreground="{TemplateBinding Foreground}" />
+                            </Grid>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Circle" Property="Fill" Value="{StaticResource ElevatedBackgroundBrush}" />
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="Circle" Property="Fill" Value="{StaticResource ElevatedBackgroundBrush}" />
+                                </Trigger>
+                                <Trigger Property="IsChecked" Value="True">
+                                    <Setter TargetName="Circle" Property="Fill" Value="{StaticResource ElevatedBackgroundBrush}" />
+                                    <Setter TargetName="Circle" Property="Stroke" Value="{StaticResource AccentBrush}" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </ToggleButton.Template>
+                </ToggleButton>
+            </StackPanel>
+        </Grid>
+
+        <Border Grid.Row="1"
+                Margin="0,0,0,8">
+            <Border.Style>
+                <Style TargetType="Border">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsChecked, ElementName=OptionsToggleButton}" Value="True">
+                            <Setter Property="Visibility" Value="Visible" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
+
             <StackPanel Margin="6,4,6,6">
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                     <TextBlock Margin="0,0,8,0" VerticalAlignment="Center" Text="Mode:" />
@@ -88,7 +188,7 @@
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
 
-                        <TextBlock Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" Text="Mic hotkey:" />
+                        <TextBlock Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" Text="Record hotkey:" />
                         <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal">
                             <CheckBox x:Name="MicCtrlCheckBox" Content="Ctrl" Margin="0,0,8,0" />
                             <CheckBox x:Name="MicShiftCheckBox" Content="Shift" Margin="0,0,8,0" />
@@ -116,7 +216,7 @@
                     </Grid>
                 </GroupBox>
             </StackPanel>
-        </Expander>
+        </Border>
 
         <TextBlock Grid.Row="2"
                    x:Name="HotkeyTextBlock"
@@ -128,7 +228,9 @@
                  x:Name="TranscriptTextBox"
                  TextWrapping="Wrap"
                  AcceptsReturn="True"
-                 VerticalScrollBarVisibility="Auto" />
+                 VerticalScrollBarVisibility="Auto"
+                 PreviewMouseDown="TranscriptTextBox_OnPreviewMouseDown"
+                 LostKeyboardFocus="TranscriptTextBox_OnLostKeyboardFocus" />
 
         <TextBlock Grid.Row="4"
                    x:Name="ErrorTextBlock"

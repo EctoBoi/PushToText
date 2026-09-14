@@ -1,6 +1,11 @@
 ﻿using System.Runtime.InteropServices;
+using Drawing = System.Drawing;
+using Forms = System.Windows.Forms;
+using Brush = System.Windows.Media.Brush;
+using Brushes = System.Windows.Media.Brushes;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 
@@ -26,6 +31,7 @@ public partial class MainWindow : Window
     private HotkeyManager? _hotkeyManager;
     private bool _isTranscribing;
     private bool _isInitializingUi;
+    private Forms.NotifyIcon? _trayIcon;
 
     public MainWindow()
     {
@@ -35,10 +41,12 @@ public partial class MainWindow : Window
         _transcriptionService = new TranscriptionService();
 
         InitializeComponent();
+        InitializeTrayIcon();
 
         SourceInitialized += MainWindowOnSourceInitialized;
         Loaded += MainWindowOnLoaded;
         Closing += MainWindowOnClosing;
+        Deactivated += MainWindowOnDeactivated;
 
         InitializeSettingsUi();
         UpdateHotkeyText();
@@ -74,9 +82,81 @@ public partial class MainWindow : Window
 
     private void MainWindowOnClosing(object? sender, System.ComponentModel.CancelEventArgs e)
     {
+        if (_trayIcon is not null)
+        {
+            _trayIcon.Visible = false;
+            _trayIcon.Dispose();
+            _trayIcon = null;
+        }
+
         _hotkeyManager?.Dispose();
         _audioRecorder.Dispose();
         _ = _transcriptionService.DisposeAsync();
+    }
+
+    private void InitializeTrayIcon()
+    {
+        _trayIcon = new Forms.NotifyIcon
+        {
+            Text = "PushToText",
+            Visible = false,
+            Icon = LoadTrayIcon()
+        };
+
+        _trayIcon.DoubleClick += (_, _) => RestoreFromTray();
+
+        var menu = new Forms.ContextMenuStrip();
+        menu.Items.Add("Restore", null, (_, _) => RestoreFromTray());
+        menu.Items.Add("Exit", null, (_, _) => Close());
+        _trayIcon.ContextMenuStrip = menu;
+    }
+
+    private static Drawing.Icon LoadTrayIcon()
+    {
+        var streamResource = System.Windows.Application.GetResourceStream(new Uri("pack://application:,,,/Assets/tape.ico"));
+        if (streamResource is null)
+        {
+            return Drawing.SystemIcons.Application;
+        }
+
+        using var stream = streamResource.Stream;
+        return new Drawing.Icon(stream);
+    }
+
+    private void MinimizeToTrayButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        MinimizeToTray();
+    }
+
+    private void MinimizeToTray()
+    {
+        if (_trayIcon is null)
+        {
+            return;
+        }
+
+        Hide();
+        ShowInTaskbar = false;
+        _trayIcon.Visible = true;
+        _trayIcon.BalloonTipTitle = "PushToText";
+        _trayIcon.BalloonTipText = "Running in the system tray.";
+        _trayIcon.ShowBalloonTip(1200);
+    }
+
+    private void RestoreFromTray()
+    {
+        Dispatcher.Invoke(() =>
+        {
+            if (_trayIcon is not null)
+            {
+                _trayIcon.Visible = false;
+            }
+
+            ShowInTaskbar = true;
+            Show();
+            Activate();
+            SetNoActivateStyle();
+        });
     }
 
     private void InitializeSettingsUi()
@@ -201,7 +281,7 @@ public partial class MainWindow : Window
 
         if (micHotkey.VirtualKey == copyHotkey.VirtualKey && micHotkey.Modifiers == copyHotkey.Modifiers)
         {
-            SetStatus("Mic and Copy hotkeys cannot be identical.", Brushes.OrangeRed);
+            SetStatus("Record and Copy hotkeys cannot be identical.", Brushes.OrangeRed);
             return;
         }
 
@@ -308,7 +388,7 @@ public partial class MainWindow : Window
     {
         try
         {
-            Clipboard.SetText(text);
+            System.Windows.Clipboard.SetText(text);
             return true;
         }
         catch (Exception ex)
@@ -347,7 +427,7 @@ public partial class MainWindow : Window
     private void UpdateHotkeyText()
     {
         HotkeyTextBlock.Text =
-            $"Mic ({_settings.RecordingMode}): {_settings.MicrophoneHotkey}    |    Copy: {_settings.CopyHotkey}";
+            $"Record ({_settings.RecordingMode}): {_settings.MicrophoneHotkey}    |    Copy: {_settings.CopyHotkey}";
     }
 
     private void SetNoActivateStyle()
@@ -357,13 +437,14 @@ public partial class MainWindow : Window
         SetWindowLong(handle, GwlExStyle, exStyle | WsExNoActivate);
     }
 
-    [DllImport("user32.dll", EntryPoint = "GetWindowLong")]
-    private static extern int GetWindowLong(IntPtr hWnd, int nIndex);
+    private void ClearNoActivateStyle()
+    {
+        var handle = new WindowInteropHelper(this).Handle;
+        var exStyle = GetWindowLong(handle, GwlExStyle);
+        SetWindowLong(handle, GwlExStyle, exStyle & ~WsExNoActivate);
+    }
 
-    [DllImport("user32.dll", EntryPoint = "SetWindowLong")]
-    private static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
-
-    private static HotkeyBinding? BuildBindingFromControls(CheckBox ctrl, CheckBox shift, CheckBox alt, CheckBox win, ComboBox keyCombo)
+    private static HotkeyBinding? BuildBindingFromControls(System.Windows.Controls.CheckBox ctrl, System.Windows.Controls.CheckBox shift, System.Windows.Controls.CheckBox alt, System.Windows.Controls.CheckBox win, System.Windows.Controls.ComboBox keyCombo)
     {
         if (keyCombo.SelectedItem is not string keyName || !Enum.TryParse<System.Windows.Input.Key>(keyName, out var key))
         {
@@ -398,7 +479,7 @@ public partial class MainWindow : Window
         };
     }
 
-    private static void ApplyBindingToControls(HotkeyBinding binding, CheckBox ctrl, CheckBox shift, CheckBox alt, CheckBox win, ComboBox keyCombo)
+    private static void ApplyBindingToControls(HotkeyBinding binding, System.Windows.Controls.CheckBox ctrl, System.Windows.Controls.CheckBox shift, System.Windows.Controls.CheckBox alt, System.Windows.Controls.CheckBox win, System.Windows.Controls.ComboBox keyCombo)
     {
         ctrl.IsChecked = binding.Modifiers.HasFlag(HotkeyModifiers.Control);
         shift.IsChecked = binding.Modifiers.HasFlag(HotkeyModifiers.Shift);
@@ -408,4 +489,30 @@ public partial class MainWindow : Window
         var keyText = System.Windows.Input.KeyInterop.KeyFromVirtualKey((int)binding.VirtualKey).ToString();
         keyCombo.SelectedItem = SelectableKeys.Contains(keyText) ? keyText : "F9";
     }
+
+    private void MainWindowOnDeactivated(object? sender, EventArgs e)
+    {
+        SetNoActivateStyle();
+    }
+
+    private void TranscriptTextBox_OnPreviewMouseDown(object sender, MouseButtonEventArgs e)
+    {
+        ClearNoActivateStyle();
+        Activate();
+        TranscriptTextBox.Focus();
+    }
+
+    private void TranscriptTextBox_OnLostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+    {
+        if (!IsActive)
+        {
+            SetNoActivateStyle();
+        }
+    }
+
+    [DllImport("user32.dll", EntryPoint = "GetWindowLong")]
+    private static extern int GetWindowLong(IntPtr hWnd, int nIndex);
+
+    [DllImport("user32.dll", EntryPoint = "SetWindowLong")]
+    private static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
 }
